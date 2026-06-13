@@ -2,6 +2,7 @@ package devices
 
 import (
 	"mobile-connect/internal/adb"
+	"mobile-connect/internal/devices/entity"
 	"mobile-connect/internal/logger"
 	"strings"
 )
@@ -16,7 +17,7 @@ func NewService(client adb.ADBClient) *Service {
 	}
 }
 
-func (s *Service) List() ([]Device, error) {
+func (s *Service) List() ([]entity.Device, error) {
 
 	logger.Logger.Printf(
 		"listing devices",
@@ -29,7 +30,7 @@ func (s *Service) List() ([]Device, error) {
 
 	lines := strings.Split(output, "\n")
 
-	var devices []Device
+	var devices []entity.Device
 
 	for _, line := range lines {
 
@@ -68,7 +69,7 @@ func (s *Service) List() ([]Device, error) {
 			"ro.build.version.sdk",
 		)
 
-		devices = append(devices, Device{
+		devices = append(devices, entity.Device{
 			ID:             serial,
 			Status:         fields[1],
 			Manufacturer:   manufacturer,
@@ -87,4 +88,20 @@ func (s *Service) List() ([]Device, error) {
 	}
 
 	return devices, nil
+}
+
+func (s *Service) GetByID(id string) (*entity.Device, error) {
+
+	devices, err := s.List()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, device := range devices {
+		if device.ID == id {
+			return &device, nil
+		}
+	}
+
+	return nil, nil
 }

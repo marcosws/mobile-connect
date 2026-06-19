@@ -49,10 +49,7 @@ func (c *Client) GetProp(serial, prop string) (string, error) {
 	return strings.TrimSpace(out.String()), nil
 }
 
-func (c *Client) Shell(
-	serial string,
-	command string,
-) (string, error) {
+func (c *Client) Shell(serial string, command string) (string, error) {
 
 	args := []string{
 		"-s",

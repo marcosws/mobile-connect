@@ -15,10 +15,7 @@ func NewService(client adb.ADBClient) *Service {
 	}
 }
 
-func (s *Service) Shell(
-	id string,
-	command string,
-) (string, error) {
+func (s *Service) Shell(id string, command string) (string, error) {
 
 	logger.Logger.Printf(
 		"executing shell device=%s command=%s",

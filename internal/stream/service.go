@@ -70,3 +70,27 @@ func (s *Service) Swipe(
 
 	return cmd.Run()
 }
+
+func (s *Service) LongPress(
+	deviceID string,
+	x int,
+	y int,
+	duration int,
+) error {
+
+	cmd := exec.Command(
+		"adb",
+		"-s",
+		deviceID,
+		"shell",
+		"input",
+		"swipe",
+		strconv.Itoa(x),
+		strconv.Itoa(y),
+		strconv.Itoa(x),
+		strconv.Itoa(y),
+		strconv.Itoa(duration),
+	)
+
+	return cmd.Run()
+}

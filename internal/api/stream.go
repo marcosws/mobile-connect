@@ -90,6 +90,15 @@ func (h *Handler) StreamControl(
 				int(event.Y2),
 				event.Duration,
 			)
+
+		case "longpress":
+
+			_ = h.streamService.LongPress(
+				id,
+				int(event.X),
+				int(event.Y),
+				event.Duration,
+			)
 		}
 	}
 }

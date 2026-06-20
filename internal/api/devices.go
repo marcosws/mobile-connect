@@ -37,15 +37,3 @@ func (h *Handler) GetDeviceByID(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(device)
 }
-
-// func (h *Handler) GetDeviceByID(w http.ResponseWriter, r *http.Request) {
-// 	id := strings.TrimPrefix(
-// 		r.URL.Path,
-// 		"/devices/",
-// 	)
-// 	logger.Logger.Printf(
-// 		"searching device id=%s",
-// 		id,
-// 	)
-// 	fmt.Fprintf(w, "device: %s", id)
-// }

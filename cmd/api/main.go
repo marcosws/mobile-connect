@@ -4,6 +4,7 @@ import (
 	"log"
 	"mobile-connect/internal/adb"
 	"mobile-connect/internal/api"
+	"mobile-connect/internal/apk"
 	"mobile-connect/internal/devices"
 	"mobile-connect/internal/middleware"
 	"mobile-connect/internal/shell"
@@ -17,12 +18,14 @@ func main() {
 
 	deviceService := devices.NewService(adbClient)
 	shellService := shell.NewService(adbClient)
+	apkService := apk.NewService(adbClient)
 	streamService := stream.NewService()
 
 	handler := api.NewHandler(
 		deviceService,
 		shellService,
 		streamService,
+		apkService,
 	)
 
 	mux := http.NewServeMux()
@@ -41,6 +44,31 @@ func main() {
 	mux.HandleFunc(
 		"GET /devices/{id}/stream/control",
 		handler.StreamControl,
+	)
+
+	mux.HandleFunc(
+		"POST /devices/{id}/install",
+		handler.InstallAPK,
+	)
+
+	mux.HandleFunc(
+		"POST /devices/{id}/uninstall",
+		handler.UninstallAPK,
+	)
+
+	mux.HandleFunc(
+		"GET /devices/{id}/packages",
+		handler.GetPackages,
+	)
+
+	mux.HandleFunc(
+		"POST /devices/{id}/launch",
+		handler.LaunchApp,
+	)
+
+	mux.HandleFunc(
+		"POST /devices/{id}/stop",
+		handler.StopApp,
 	)
 
 	mux.Handle("/web/", http.StripPrefix("/web/", http.FileServer(http.Dir("./web"))))

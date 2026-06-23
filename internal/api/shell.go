@@ -7,10 +7,7 @@ import (
 	"strings"
 )
 
-func (h *Handler) Shell(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
+func (h *Handler) Shell(w http.ResponseWriter, r *http.Request) {
 
 	id := strings.TrimPrefix(r.URL.Path, "/devices/")
 	id = strings.TrimSuffix(id, "/shell")

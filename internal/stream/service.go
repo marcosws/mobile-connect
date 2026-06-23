@@ -3,6 +3,7 @@ package stream
 import (
 	"os/exec"
 	"strconv"
+	"strings"
 )
 
 type Service struct{}
@@ -90,6 +91,30 @@ func (s *Service) LongPress(
 		strconv.Itoa(x),
 		strconv.Itoa(y),
 		strconv.Itoa(duration),
+	)
+
+	return cmd.Run()
+}
+
+func (s *Service) InputText(
+	deviceID string,
+	text string,
+) error {
+
+	text = strings.ReplaceAll(
+		text,
+		" ",
+		"%s",
+	)
+
+	cmd := exec.Command(
+		"adb",
+		"-s",
+		deviceID,
+		"shell",
+		"input",
+		"text",
+		text,
 	)
 
 	return cmd.Run()

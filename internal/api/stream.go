@@ -99,6 +99,13 @@ func (h *Handler) StreamControl(
 				int(event.Y),
 				event.Duration,
 			)
+
+		case "text":
+
+			_ = h.streamService.InputText(
+				id,
+				event.Text,
+			)
 		}
 	}
 }

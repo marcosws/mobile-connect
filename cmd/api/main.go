@@ -25,15 +25,16 @@ func main() {
 
 	appRepository := apps.NewRepository(db)
 
-	appService := apps.NewService(
-		adbClient,
-		appRepository,
-	)
-
 	deviceService := devices.NewService(adbClient)
 	shellService := shell.NewService(adbClient)
 	apkService := apk.NewService(adbClient)
 	streamService := stream.NewService()
+
+	appService := apps.NewService(
+		adbClient,
+		appRepository,
+		apkService,
+	)
 
 	handler := api.NewHandler(
 		deviceService,
@@ -93,6 +94,11 @@ func main() {
 	mux.HandleFunc("GET /apps/{id}", handler.GetAppByID)
 
 	mux.HandleFunc("DELETE /apps/{id}", handler.DeleteApp)
+
+	mux.HandleFunc(
+		"POST /apps/{appId}/devices/{deviceId}/install",
+		handler.InstallStoredApp,
+	)
 
 	mux.Handle("/web/", http.StripPrefix("/web/", http.FileServer(http.Dir("./web"))))
 

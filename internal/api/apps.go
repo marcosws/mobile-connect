@@ -149,3 +149,44 @@ func (h *Handler) DeleteApp(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+/** ===========================================*/
+
+func (h *Handler) InstallStoredApp(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+
+	appID := r.PathValue("appId")
+	deviceID := r.PathValue("deviceId")
+
+	output, err := h.appService.Install(
+		appID,
+		deviceID,
+	)
+
+	if err != nil {
+
+		http.Error(
+			w,
+			err.Error(),
+			http.StatusInternalServerError,
+		)
+
+		return
+	}
+
+	w.Header().Set(
+		"Content-Type",
+		"application/json",
+	)
+
+	json.NewEncoder(w).Encode(
+		map[string]string{
+			"device": deviceID,
+			"appId":  appID,
+			"status": "installed",
+			"output": output,
+		},
+	)
+}

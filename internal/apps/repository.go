@@ -3,6 +3,7 @@ package apps
 import (
 	"database/sql"
 	"mobile-connect/internal/apps/entity"
+	"time"
 )
 
 type Repository struct {
@@ -85,6 +86,7 @@ func (r *Repository) FindAll() (
 	for rows.Next() {
 
 		var app entity.App
+		var createdAt sql.NullTime
 
 		err := rows.Scan(
 			&app.ID,
@@ -97,11 +99,17 @@ func (r *Repository) FindAll() (
 			&app.TargetSDK,
 			&app.Size,
 			&app.SHA256,
-			&app.CreatedAt,
+			&createdAt,
 		)
 
 		if err != nil {
 			return nil, err
+		}
+
+		if createdAt.Valid {
+			app.CreatedAt = createdAt.Time
+		} else {
+			app.CreatedAt = time.Time{}
 		}
 
 		apps = append(
@@ -118,6 +126,7 @@ func (r *Repository) FindByID(
 ) (*entity.App, error) {
 
 	var app entity.App
+	var createdAt sql.NullTime
 
 	err := r.db.QueryRow(`
 		SELECT
@@ -145,11 +154,17 @@ func (r *Repository) FindByID(
 		&app.TargetSDK,
 		&app.Size,
 		&app.SHA256,
-		&app.CreatedAt,
+		&createdAt,
 	)
 
 	if err != nil {
 		return nil, err
+	}
+
+	if createdAt.Valid {
+		app.CreatedAt = createdAt.Time
+	} else {
+		app.CreatedAt = time.Time{}
 	}
 
 	return &app, nil

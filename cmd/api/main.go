@@ -5,6 +5,8 @@ import (
 	"mobile-connect/internal/adb"
 	"mobile-connect/internal/api"
 	"mobile-connect/internal/apk"
+	"mobile-connect/internal/apps"
+	"mobile-connect/internal/database"
 	"mobile-connect/internal/devices"
 	"mobile-connect/internal/middleware"
 	"mobile-connect/internal/shell"
@@ -15,6 +17,18 @@ import (
 func main() {
 
 	adbClient := adb.New()
+	db := database.New()
+
+	if err := database.Migrate(db); err != nil {
+		log.Fatal(err)
+	}
+
+	appRepository := apps.NewRepository(db)
+
+	appService := apps.NewService(
+		adbClient,
+		appRepository,
+	)
 
 	deviceService := devices.NewService(adbClient)
 	shellService := shell.NewService(adbClient)
@@ -26,6 +40,7 @@ func main() {
 		shellService,
 		streamService,
 		apkService,
+		appService,
 	)
 
 	mux := http.NewServeMux()
@@ -70,6 +85,14 @@ func main() {
 		"POST /devices/{id}/stop",
 		handler.StopApp,
 	)
+
+	mux.HandleFunc("POST /apps", handler.CreateApp)
+
+	mux.HandleFunc("GET /apps", handler.GetApps)
+
+	mux.HandleFunc("GET /apps/{id}", handler.GetAppByID)
+
+	mux.HandleFunc("DELETE /apps/{id}", handler.DeleteApp)
 
 	mux.Handle("/web/", http.StripPrefix("/web/", http.FileServer(http.Dir("./web"))))
 

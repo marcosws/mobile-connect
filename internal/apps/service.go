@@ -4,6 +4,7 @@ import (
 	"mobile-connect/internal/adb"
 	"mobile-connect/internal/apk"
 	"mobile-connect/internal/apps/entity"
+	"os"
 	"path/filepath"
 )
 
@@ -37,6 +38,15 @@ func (s *Service) Delete(id string) error {
 	return s.repository.Delete(id)
 }
 
+func resolveAPKPath(fileName string) string {
+	storagePath := filepath.Join("storage", "apks", fileName)
+	if _, err := os.Stat(storagePath); err == nil {
+		return storagePath
+	}
+
+	return filepath.Join("uploads", fileName)
+}
+
 func (s *Service) Install(
 	appID string,
 	deviceID string,
@@ -47,11 +57,7 @@ func (s *Service) Install(
 		return "", err
 	}
 
-	apkPath := filepath.Join(
-		"storage",
-		"apks",
-		app.FileName,
-	)
+	apkPath := resolveAPKPath(app.FileName)
 
 	return s.apkService.InstallAPK(
 		deviceID,

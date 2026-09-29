@@ -2,6 +2,7 @@ package api
 
 import (
 	"mobile-connect/internal/apk"
+	"mobile-connect/internal/appium"
 	"mobile-connect/internal/apps"
 	"mobile-connect/internal/devices"
 	"mobile-connect/internal/shell"
@@ -14,6 +15,7 @@ type Handler struct {
 	streamService *stream.Service
 	apkService    *apk.Service
 	appService    *apps.Service
+	appiumClient  *appium.Client
 }
 
 func NewHandler(
@@ -22,6 +24,7 @@ func NewHandler(
 	streamService *stream.Service,
 	apkService *apk.Service,
 	appService *apps.Service,
+	appiumClient *appium.Client,
 ) *Handler {
 
 	return &Handler{
@@ -30,5 +33,6 @@ func NewHandler(
 		streamService: streamService,
 		apkService:    apkService,
 		appService:    appService,
+		appiumClient:  appiumClient,
 	}
 }

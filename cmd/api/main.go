@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"log"
 	"mobile-connect/internal/adb"
 	"mobile-connect/internal/api"
 	"mobile-connect/internal/apk"
+	"mobile-connect/internal/appium"
 	"mobile-connect/internal/apps"
 	"mobile-connect/internal/database"
 	"mobile-connect/internal/devices"
@@ -12,11 +16,36 @@ import (
 	"mobile-connect/internal/shell"
 	"mobile-connect/internal/stream"
 	"net/http"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
 )
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	adbClient := adb.New()
+	appiumURL := os.Getenv("APPIUM_URL")
+	if appiumURL == "" {
+		appiumURL = "http://127.0.0.1:4723"
+	}
+	appiumClient, err := appium.New(appiumURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if autoStart, err := appiumAutoStart(); err != nil {
+		log.Fatal(err)
+	} else if autoStart {
+		appiumCommand := os.Getenv("APPIUM_COMMAND")
+		if appiumCommand == "" {
+			appiumCommand = "appium"
+		}
+		if err := appium.StartLocal(ctx, appiumClient, appiumCommand); err != nil {
+			log.Fatal(err)
+		}
+	}
 	db := database.New()
 
 	if err := database.Migrate(db); err != nil {
@@ -42,6 +71,7 @@ func main() {
 		streamService,
 		apkService,
 		appService,
+		appiumClient,
 	)
 
 	mux := http.NewServeMux()
@@ -51,6 +81,17 @@ func main() {
 	mux.HandleFunc("GET /devices/{id}", handler.GetDeviceByID)
 
 	mux.HandleFunc("POST /devices/{id}/shell", handler.Shell)
+
+	mux.HandleFunc("GET /appium/status", handler.AppiumStatus)
+
+	mux.HandleFunc("POST /devices/{id}/appium/sessions", handler.CreateAppiumSession)
+
+	// This route uses the WebDriver convention expected by Selenium and Appium Inspector.
+	mux.HandleFunc("POST /devices/{id}/appium/session", handler.CreateAppiumSession)
+
+	mux.HandleFunc("/devices/{id}/appium/{path...}", handler.AppiumDeviceProxy)
+
+	mux.HandleFunc("/appium/{path...}", handler.AppiumProxy)
 
 	mux.HandleFunc(
 		"GET /devices/{id}/stream/video",
@@ -104,13 +145,27 @@ func main() {
 
 	log.Println("server running on :8080")
 
-	log.Fatal(
-		http.ListenAndServe(
-			":8080",
-			middleware.Cors(mux),
-		),
-	)
+	server := &http.Server{Addr: ":8080", Handler: middleware.Cors(mux)}
+	go func() {
+		<-ctx.Done()
+		_ = server.Shutdown(context.Background())
+	}()
+	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatal(err)
+	}
 
+}
+
+func appiumAutoStart() (bool, error) {
+	value := os.Getenv("APPIUM_AUTO_START")
+	if value == "" {
+		return true, nil
+	}
+	enabled, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, fmt.Errorf("invalid APPIUM_AUTO_START value %q: use true or false", value)
+	}
+	return enabled, nil
 }
 
 /*

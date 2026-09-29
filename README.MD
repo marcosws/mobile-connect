@@ -1,184 +1,274 @@
 # Mobile Connect
 
-Mobile Connect é uma aplicação em Go para gerenciamento e controle de dispositivos Android via ADB.
-O projeto fornece uma API HTTP para listar dispositivos, executar comandos shell remotos, instalar e desinstalar APKs,
-manter um catálogo de APKs, listar pacotes, iniciar e parar apps, além de capturar a tela e controlar o dispositivo remotamente.
+Open-source platform for managing and remotely controlling Android devices through ADB.
 
-## Visão Geral
+Mobile Connect provides an HTTP API and WebSocket endpoints for device management, APK management, remote control, screen streaming, and Appium integration.
 
-- Backend em Go usando `net/http`.
-- Integração com ADB para comando remoto em dispositivos Android.
-- Websocket para streaming de vídeo e controle remoto.
-- Frontend estático servido a partir de `web/index.html`.
-- Middleware CORS configurado para `http://localhost:5173`.
+## Features
 
-## Funcionalidades principais
+### Device Management
 
-- Listar dispositivos Android conectados.
-- Consultar informações de um dispositivo específico.
-- Executar comandos shell remotos via ADB.
-- Capturar a tela do dispositivo.
-- Enviar toques, swipes, long press e texto.
-- Instalar e desinstalar APKs.
-- Manter um catálogo de APKs enviados, consultar e excluir arquivos armazenados.
-- Consultar metadados dos APKs, como pacote, versão, SDK mínimo/alvo, tamanho e hash SHA-256.
-- Instalar em um dispositivo um APK que já esteja no catálogo.
-- Listar pacotes instalados no dispositivo.
-- Iniciar e parar aplicativos.
-- Criar sessões Appium vinculadas ao dispositivo selecionado e encaminhar comandos WebDriver para clientes como Selenium e Appium Inspector.
+* Discover connected Android devices
+* Retrieve device information
+* Execute shell commands through ADB
 
-## Estrutura de pastas
+### APK & Application Management
 
-```
-mobile-connect/
-├── cmd/
-│   └── api/
-│       └── main.go           # ponto de entrada do servidor HTTP
-├── internal/
-│   ├── adb/                  # abstração do cliente ADB
-│   │   ├── adb.go
-│   │   └── client.go
-│   ├── api/                  # handlers HTTP e rotas da API
-│   │   ├── apk.go
-│   │   ├── devices.go
-│   │   ├── handler.go
-│   │   ├── shell.go
-│   │   └── stream.go
-│   ├── apk/                  # lógica de instalação/desinstalação e apps
-│   │   ├── entity/
-│   │   │   ├── apprequest.go
-│   │   │   └── uninstall.go
-│   │   └── service.go
-│   ├── devices/              # serviço de listagem e consulta de dispositivos
-│   │   ├── entity/
-│   │   │   ├── device.go
-│   │   │   └── shell.go
-│   │   └── service.go
-│   ├── logger/               # logger compartilhado
-│   │   └── logger.go
-│   ├── middleware/           # middlewares HTTP, por exemplo CORS
-│   │   └── cors.go
-│   ├── shell/                # serviço de execução de comandos shell via ADB
-│   │   └── service.go
-│   └── stream/               # captura de tela e controle remoto via ADB
-│       ├── service.go
-│       └── types.go
-├── storage/
-│   ├── apks/
-│   ├── logs/
-│   ├── recordings/
-│   ├── screenshots/
-│   └── uploads/
-├── web/
-│   └── index.html            # frontend estático
-├── go.mod
-├── go.sum
-└── README.MD
+* Install APK files
+* Uninstall applications
+* List installed packages
+* Launch applications
+* Stop applications
+
+### Remote Control
+
+* Screen streaming
+* Touch input
+* Swipe gestures
+* Long press
+* Text input
+
+### Mobile Automation
+
+* Appium gateway
+* W3C WebDriver session creation
+* Device selection by Mobile Connect device ID
+* Selenium WebDriver compatibility
+* Appium Inspector support
+
+## Architecture
+
+Mobile Connect is designed as a lightweight backend between Android devices, automation tools, and user interfaces.
+
+```text
+                     ┌──────────────────────┐
+                     │   Vue Frontend       │
+                     └──────────┬───────────┘
+                                │
+                         HTTP / WebSocket
+                                │
+                                ▼
+                     ┌──────────────────────┐
+                     │   Mobile Connect    │
+                     │      Go API          │
+                     ├──────────────────────┤
+                     │ Device Service       │
+                     │ APK Service          │
+                     │ Stream Service       │
+                     │ Shell Service       │
+                     │ Appium Gateway       │
+                     └───────┬──────────────┘
+                             │
+                    ┌────────┴────────┐
+                    │                 │
+                   ADB              Appium
+                    │                 │
+                    └────────┬────────┘
+                             │
+                             ▼
+                    Android Devices
 ```
 
-## Endpoints principais
+The backend is implemented in Go using the standard `net/http` package, with ADB providing the communication layer with Android devices.
 
-- `GET /devices` - lista dispositivos conectados.
-- `GET /devices/{id}` - obtém dados do dispositivo por ID.
-- `POST /devices/{id}/shell` - executa um comando shell no dispositivo.
-- `GET /devices/{id}/stream/video` - websocket para streaming de tela.
-- `GET /devices/{id}/stream/control` - websocket para controle remoto.
-- `POST /devices/{id}/install` - instala um APK enviado como multipart/form-data.
-- `POST /devices/{id}/uninstall` - desinstala um pacote pelo nome.
-- `GET /devices/{id}/packages` - lista pacotes instalados.
-- `POST /devices/{id}/launch` - inicia um aplicativo por pacote.
-- `POST /devices/{id}/stop` - para um aplicativo em execução.
-- `POST /apps` - envia um APK para o catálogo; o campo multipart deve se chamar `apk`.
-- `GET /apps` - lista os APKs do catálogo e seus metadados.
-- `GET /apps/{id}` - consulta um APK pelo ID.
-- `DELETE /apps/{id}` - remove um APK do catálogo.
-- `POST /apps/{appId}/devices/{deviceId}/install` - instala um APK do catálogo no dispositivo informado.
-- `GET /appium/status` - verifica a disponibilidade do servidor Appium configurado.
-- `POST /devices/{id}/appium/sessions` - cria uma sessão Appium W3C e fixa `appium:udid` no dispositivo `{id}`.
-- `POST /devices/{id}/appium/session` e `/devices/{id}/appium/session/{sessionId}/...` - rota WebDriver compatível com Selenium e Appium Inspector.
-- `/appium/{path...}` - encaminha comandos WebDriver para o Appium (por exemplo, `POST /appium/session/{sessionId}/element`).
+WebSocket connections are used for screen streaming and remote control.
 
-## Como executar
+## Requirements
 
-1. Instale o `adb` no sistema.
-2. Conecte um dispositivo Android via USB ou rede.
-3. Execute:
+* Go 1.25+
+* Android Debug Bridge (ADB)
+* Android device or emulator
+* USB debugging enabled and authorized
+
+Appium is optional and only required when using mobile automation features.
+
+## Quick Start
+
+Clone the repository:
+
+```bash
+git clone https://github.com/marcosws/mobile-connect.git
+cd mobile-connect
+```
+
+Make sure ADB is available:
+
+```bash
+adb devices
+```
+
+Start Mobile Connect:
 
 ```bash
 go run ./cmd/api
 ```
 
-4. O servidor ficará disponível em `http://localhost:8080`.
+The API will be available at:
+
+```text
+http://localhost:8080
+```
+
+Check connected devices:
+
+```bash
+curl http://localhost:8080/devices
+```
+
+## API
+
+### Devices
+
+| Method | Endpoint              | Description             |
+| ------ | --------------------- | ----------------------- |
+| GET    | `/devices`            | List connected devices  |
+| GET    | `/devices/{id}`       | Get device information  |
+| POST   | `/devices/{id}/shell` | Execute a shell command |
+
+### Remote Control
+
+| Method | Endpoint                       | Description                |
+| ------ | ------------------------------ | -------------------------- |
+| GET    | `/devices/{id}/stream/video`   | Screen streaming WebSocket |
+| GET    | `/devices/{id}/stream/control` | Remote control WebSocket   |
+
+### Applications
+
+| Method | Endpoint                  | Description              |
+| ------ | ------------------------- | ------------------------ |
+| POST   | `/devices/{id}/install`   | Install an APK           |
+| POST   | `/devices/{id}/uninstall` | Uninstall an application |
+| GET    | `/devices/{id}/packages`  | List installed packages  |
+| POST   | `/devices/{id}/launch`    | Launch an application    |
+| POST   | `/devices/{id}/stop`      | Stop an application      |
 
 ### Appium
 
-O Mobile Connect inicia o Appium automaticamente em `http://127.0.0.1:4723` se
-ele ainda não estiver em execução. Instale antes o binário e o driver desejado,
-por exemplo `appium driver install uiautomator2`. Para outra porta ou uma base
-como `/wd/hub`, defina `APPIUM_URL`:
+| Method                                         | Endpoint                       | Description                |
+| ---------------------------------------------- | ------------------------------ | -------------------------- |
+| GET                                            | `/appium/status`               | Check Appium availability  |
+| POST                                           | `/devices/{id}/appium/session` | Create an Appium session   |
+| `/devices/{id}/appium/session/{sessionId}/...` |                                | Execute WebDriver commands |
 
-```bash
-APPIUM_URL=http://127.0.0.1:4723/wd/hub go run ./cmd/api
+For complete Appium configuration, client examples, and troubleshooting, see [APPIUM.MD](./APPIUM.MD).
+
+## Appium Integration
+
+Mobile Connect can act as an Appium gateway.
+
+When creating an Appium session through a device-specific endpoint, the Android device is selected using the `{id}` from the Mobile Connect API.
+
+For example:
+
+```text
+http://localhost:8080/devices/emulator-5554/appium
 ```
 
-Defina `APPIUM_COMMAND` para informar outro caminho do executável. Para conectar
-a um Appium remoto ou gerenciado externamente, use `APPIUM_AUTO_START=false`.
+This allows automation clients to target a specific Android device without relying on device discovery performed by the automation client itself.
 
-Crie a sessão pelo Mobile Connect; o `appium:udid` é sempre substituído pelo ID
-do dispositivo informado na URL:
+The gateway supports Appium clients, Selenium WebDriver and Appium Inspector.
+
+See [APPIUM.MD](./APPIUM.MD) for detailed instructions.
+
+## Configuration
+
+### Appium
+
+Mobile Connect can automatically start Appium when required.
+
+| Variable            | Default                 | Description                |
+| ------------------- | ----------------------- | -------------------------- |
+| `APPIUM_URL`        | `http://127.0.0.1:4723` | Appium server URL          |
+| `APPIUM_COMMAND`    | `appium`                | Appium executable          |
+| `APPIUM_AUTO_START` | `true`                  | Automatically start Appium |
+
+Example:
 
 ```bash
-curl -X POST http://localhost:8080/devices/emulator-5554/appium/sessions \
-  -H 'Content-Type: application/json' \
-  -d '{"capabilities":{"alwaysMatch":{"platformName":"Android","appium:automationName":"UiAutomator2"}}}'
+APPIUM_URL=http://127.0.0.1:4723 go run ./cmd/api
 ```
 
-Use o `sessionId` retornado nos demais comandos WebDriver via `/appium`, por
-exemplo `DELETE /appium/session/{sessionId}`.
+To use an externally managed Appium server:
 
-## Dependências
+```bash
+APPIUM_AUTO_START=false go run ./cmd/api
+```
 
-- `github.com/gorilla/websocket`
+## Project Structure
 
+```text
+mobile-connect/
+├── cmd/
+│   └── api/              # Application entry point
+├── internal/
+│   ├── adb/              # ADB client
+│   ├── api/              # HTTP handlers and routes
+│   ├── apk/              # APK and application operations
+│   ├── devices/          # Device management
+│   ├── shell/            # Shell command execution
+│   ├── stream/           # Screen streaming and remote control
+│   ├── logger/           # Logging
+│   └── middleware/       # HTTP middleware
+├── uploads/              # Uploaded files
+├── APPIUM.MD             # Appium documentation
+├── LICENSE
+├── README.MD
+├── go.mod
+└── go.sum
+```
 
-Roadmap
+## Roadmap
 
-[x] Device discovery
+### Device & Application Management
 
-[x] Shell
+* [x] Device discovery
+* [x] Device information
+* [x] Shell commands
+* [x] APK installation
+* [x] APK uninstallation
+* [x] Application launch
+* [x] Application stop
+* [ ] APK repository
+* [ ] Device groups
 
-[x] Install APK
+### Remote Control
 
-[x] Uninstall APK
+* [x] Screen streaming
+* [x] Remote control
+* [ ] Recording
+* [ ] Logcat
 
-[x] Launch App
+### Automation
 
-[x] Stop App
+* [x] Appium gateway
+* [x] Selenium WebDriver compatibility
+* [ ] Authentication
+* [ ] Multi-user support
 
-[x] Streaming
+### Platform
 
-[x] Remote Control
+* [ ] Dashboard improvements
+* [ ] Docker support
+* [ ] iOS support
 
-[x] APK Repository
+## Security
 
-[ ] Device Groups
+Mobile Connect is currently designed for local or trusted networks.
 
-[ ] Recording
+The current version does not provide authentication or authorization.
 
-[ ] Logcat
+Because the API can execute commands and control connected Android devices, do not expose the service directly to the public Internet.
 
-[x] Appium Integration
+Authentication and multi-user support are planned for future releases.
 
-[x] Selenium Integration
+## Contributing
 
-[ ] Authentication
+Contributions, bug reports and suggestions are welcome.
 
-[ ] Multi-user
+Before opening a pull request, please make sure the project builds successfully and that the proposed change is consistent with the project's architecture and goals.
 
-[ ] iOS Support
+## License
 
-[ ] Dashboard
+Mobile Connect is licensed under the Apache License 2.0.
 
-[ ] Docker
-
-[ ] Kubernetes
+See [LICENSE](./LICENSE) for details.

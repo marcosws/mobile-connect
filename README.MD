@@ -2,7 +2,7 @@
 
 Mobile Connect é uma aplicação em Go para gerenciamento e controle de dispositivos Android via ADB.
 O projeto fornece uma API HTTP para listar dispositivos, executar comandos shell remotos, instalar e desinstalar APKs,
-listar pacotes, iniciar e parar apps, além de capturar a tela e controlar o dispositivo remotamente.
+manter um catálogo de APKs, listar pacotes, iniciar e parar apps, além de capturar a tela e controlar o dispositivo remotamente.
 
 ## Visão Geral
 
@@ -20,9 +20,12 @@ listar pacotes, iniciar e parar apps, além de capturar a tela e controlar o dis
 - Capturar a tela do dispositivo.
 - Enviar toques, swipes, long press e texto.
 - Instalar e desinstalar APKs.
+- Manter um catálogo de APKs enviados, consultar e excluir arquivos armazenados.
+- Consultar metadados dos APKs, como pacote, versão, SDK mínimo/alvo, tamanho e hash SHA-256.
+- Instalar em um dispositivo um APK que já esteja no catálogo.
 - Listar pacotes instalados no dispositivo.
 - Iniciar e parar aplicativos.
-- Criar e controlar sessões de automação Appium para um dispositivo específico.
+- Criar sessões Appium vinculadas ao dispositivo selecionado e encaminhar comandos WebDriver para clientes como Selenium e Appium Inspector.
 
 ## Estrutura de pastas
 
@@ -85,6 +88,11 @@ mobile-connect/
 - `GET /devices/{id}/packages` - lista pacotes instalados.
 - `POST /devices/{id}/launch` - inicia um aplicativo por pacote.
 - `POST /devices/{id}/stop` - para um aplicativo em execução.
+- `POST /apps` - envia um APK para o catálogo; o campo multipart deve se chamar `apk`.
+- `GET /apps` - lista os APKs do catálogo e seus metadados.
+- `GET /apps/{id}` - consulta um APK pelo ID.
+- `DELETE /apps/{id}` - remove um APK do catálogo.
+- `POST /apps/{appId}/devices/{deviceId}/install` - instala um APK do catálogo no dispositivo informado.
 - `GET /appium/status` - verifica a disponibilidade do servidor Appium configurado.
 - `POST /devices/{id}/appium/sessions` - cria uma sessão Appium W3C e fixa `appium:udid` no dispositivo `{id}`.
 - `POST /devices/{id}/appium/session` e `/devices/{id}/appium/session/{sessionId}/...` - rota WebDriver compatível com Selenium e Appium Inspector.
@@ -151,7 +159,7 @@ Roadmap
 
 [x] Remote Control
 
-[ ] APK Repository
+[x] APK Repository
 
 [ ] Device Groups
 
@@ -159,9 +167,9 @@ Roadmap
 
 [ ] Logcat
 
-[ ] Appium Integration
+[x] Appium Integration
 
-[ ] Selenium Integration
+[x] Selenium Integration
 
 [ ] Authentication
 

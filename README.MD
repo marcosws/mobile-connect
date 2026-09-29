@@ -22,6 +22,7 @@ listar pacotes, iniciar e parar apps, além de capturar a tela e controlar o dis
 - Instalar e desinstalar APKs.
 - Listar pacotes instalados no dispositivo.
 - Iniciar e parar aplicativos.
+- Criar e controlar sessões de automação Appium para um dispositivo específico.
 
 ## Estrutura de pastas
 
@@ -84,6 +85,10 @@ mobile-connect/
 - `GET /devices/{id}/packages` - lista pacotes instalados.
 - `POST /devices/{id}/launch` - inicia um aplicativo por pacote.
 - `POST /devices/{id}/stop` - para um aplicativo em execução.
+- `GET /appium/status` - verifica a disponibilidade do servidor Appium configurado.
+- `POST /devices/{id}/appium/sessions` - cria uma sessão Appium W3C e fixa `appium:udid` no dispositivo `{id}`.
+- `POST /devices/{id}/appium/session` e `/devices/{id}/appium/session/{sessionId}/...` - rota WebDriver compatível com Selenium e Appium Inspector.
+- `/appium/{path...}` - encaminha comandos WebDriver para o Appium (por exemplo, `POST /appium/session/{sessionId}/element`).
 
 ## Como executar
 
@@ -96,6 +101,32 @@ go run ./cmd/api
 ```
 
 4. O servidor ficará disponível em `http://localhost:8080`.
+
+### Appium
+
+O Mobile Connect inicia o Appium automaticamente em `http://127.0.0.1:4723` se
+ele ainda não estiver em execução. Instale antes o binário e o driver desejado,
+por exemplo `appium driver install uiautomator2`. Para outra porta ou uma base
+como `/wd/hub`, defina `APPIUM_URL`:
+
+```bash
+APPIUM_URL=http://127.0.0.1:4723/wd/hub go run ./cmd/api
+```
+
+Defina `APPIUM_COMMAND` para informar outro caminho do executável. Para conectar
+a um Appium remoto ou gerenciado externamente, use `APPIUM_AUTO_START=false`.
+
+Crie a sessão pelo Mobile Connect; o `appium:udid` é sempre substituído pelo ID
+do dispositivo informado na URL:
+
+```bash
+curl -X POST http://localhost:8080/devices/emulator-5554/appium/sessions \
+  -H 'Content-Type: application/json' \
+  -d '{"capabilities":{"alwaysMatch":{"platformName":"Android","appium:automationName":"UiAutomator2"}}}'
+```
+
+Use o `sessionId` retornado nos demais comandos WebDriver via `/appium`, por
+exemplo `DELETE /appium/session/{sessionId}`.
 
 ## Dependências
 

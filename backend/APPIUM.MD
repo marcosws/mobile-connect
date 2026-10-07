@@ -25,14 +25,16 @@ sempre substitui `appium:udid` pelo `{id}` presente na URL.
    `127.0.0.1:4723`:
 
    ```bash
-   APPIUM_URL=http://127.0.0.1:4723 go run ./cmd/api
-   ```
+cd backend
+APPIUM_URL=http://127.0.0.1:4723 go run ./cmd/api
+```
 
    Esse é o valor padrão, portanto a variável pode ser omitida nesse caso. Para
    usar outra porta ou base, configure `APPIUM_URL`; o Mobile Connect repassa
    automaticamente endereço, porta e `--base-path` ao Appium:
 
    ```bash
+   cd backend
    APPIUM_URL=http://127.0.0.1:4723/wd/hub go run ./cmd/api
    ```
 

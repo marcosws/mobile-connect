@@ -91,6 +91,9 @@ git clone https://github.com/marcosws/mobile-connect.git
 cd mobile-connect
 ```
 
+The repository contains the Go API in [`backend/`](./backend/) and the Vue 3
+frontend in [`frontend/`](./frontend/).
+
 Make sure ADB is available:
 
 ```bash
@@ -100,6 +103,7 @@ adb devices
 Start Mobile Connect:
 
 ```bash
+cd backend
 go run ./cmd/api
 ```
 
@@ -113,6 +117,14 @@ Check connected devices:
 
 ```bash
 curl http://localhost:8080/devices
+```
+
+To start the Vue development server, open another terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
 ## API
@@ -150,7 +162,7 @@ curl http://localhost:8080/devices
 | POST                                           | `/devices/{id}/appium/session` | Create an Appium session   |
 | `/devices/{id}/appium/session/{sessionId}/...` |                                | Execute WebDriver commands |
 
-For complete Appium configuration, client examples, and troubleshooting, see [APPIUM.MD](./APPIUM.MD).
+For complete Appium configuration, client examples, and troubleshooting, see [backend/APPIUM.MD](./backend/APPIUM.MD).
 
 ## Appium Integration
 
@@ -168,7 +180,7 @@ This allows automation clients to target a specific Android device without relyi
 
 The gateway supports Appium clients, Selenium WebDriver and Appium Inspector.
 
-See [APPIUM.MD](./APPIUM.MD) for detailed instructions.
+See [backend/APPIUM.MD](./backend/APPIUM.MD) for detailed instructions.
 
 ## Configuration
 
@@ -185,12 +197,14 @@ Mobile Connect can automatically start Appium when required.
 Example:
 
 ```bash
+cd backend
 APPIUM_URL=http://127.0.0.1:4723 go run ./cmd/api
 ```
 
 To use an externally managed Appium server:
 
 ```bash
+cd backend
 APPIUM_AUTO_START=false go run ./cmd/api
 ```
 
@@ -198,23 +212,17 @@ APPIUM_AUTO_START=false go run ./cmd/api
 
 ```text
 mobile-connect/
-├── cmd/
-│   └── api/              # Application entry point
-├── internal/
-│   ├── adb/              # ADB client
-│   ├── api/              # HTTP handlers and routes
-│   ├── apk/              # APK and application operations
-│   ├── devices/          # Device management
-│   ├── shell/            # Shell command execution
-│   ├── stream/           # Screen streaming and remote control
-│   ├── logger/           # Logging
-│   └── middleware/       # HTTP middleware
-├── uploads/              # Uploaded files
-├── APPIUM.MD             # Appium documentation
+├── backend/
+│   ├── cmd/api/          # Go API entry point
+│   ├── internal/         # Backend packages
+│   ├── uploads/          # Uploaded APKs
+│   ├── storage/          # Local runtime data (ignored by Git)
+│   ├── APPIUM.MD         # Appium documentation
+│   ├── go.mod
+│   └── go.sum
+├── frontend/             # Vue 3 + Vite application
 ├── LICENSE
-├── README.MD
-├── go.mod
-└── go.sum
+└── README.MD
 ```
 
 ## Roadmap
